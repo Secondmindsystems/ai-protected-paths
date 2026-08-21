@@ -1,0 +1,35 @@
+AI Protected Paths  v1.0.1
+Enforcement hardening release.
+
+Changes:
+- Hardened protected-path config resolution against working-tree tampering.
+  Hooks now resolve rules from the staged index, then HEAD, then working tree.
+- Closed rename/move-out bypasses by enumerating staged paths with
+  `--no-renames`.
+- Closed case-variant bypasses on case-insensitive repositories.
+- Installers now add `proofs/` and `approvals/APPROVAL_TOKEN.txt` to the target
+  repo `.gitignore` without overwriting existing ignore rules.
+- `verify` now fails when the installed shell hook runtime
+  `hooks/pre_commit.sh` or runtime shim `hooks/pre-commit` is missing.
+- Added bypass regression coverage for rename-out, missing config,
+  working-tree config tampering, case variants, runtime verification, and
+  installer-managed ignore rules.
+
+Validation posture:
+- Windows cleanroom release smoke: PASS when recorded by the v1.0.1 release
+  receipt.
+- Bypass regression suite: PASS when recorded by the v1.0.1 release receipt.
+- Native Linux validation: PENDING.
+
+Scope:
+- Commit-time local governance only.
+- No remote/team-wide enforcement by itself.
+- No branch protection.
+- No cryptographic guarantees.
+- No tamper-proof or immutable audit guarantee.
+- No runtime proof-schema validation claim.
+- Bypassable with git commit --no-verify.
+
+Tag: v1.0.1
+Release Status: Enforcement hardening release artifact prepared for reviewer
+re-verification.

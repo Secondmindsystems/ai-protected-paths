@@ -1,0 +1,296 @@
+# AI Protected Paths - Quickstart
+
+Stop AI tools, rushed commits, or accidental changes from silently entering Git
+history through sensitive paths in your repo.
+
+Protected Paths adds a local approval checkpoint before changes to important
+paths can be committed.
+
+Normal files commit normally.
+Protected files require an explicit approval step.
+Hook-governed commit decisions can create local proof receipts.
+
+## 60-Second Start
+
+### 1. Extract The ZIP
+
+Unzip AI Protected Paths anywhere on your computer.
+
+Example:
+
+`C:\Tools\AI_Protected_Paths`
+
+### 2. Open Your Project Repo
+
+Open PowerShell inside the Git repo you want to protect.
+
+Example:
+
+`cd C:\YourProject`
+
+### 3. Install The Hook
+
+Run:
+
+`C:\Tools\AI_Protected_Paths\protected-paths.cmd install`
+
+You should see:
+
+`OK: installed .git/hooks/pre-commit`
+
+The installer also adds `proofs/` and `approvals/APPROVAL_TOKEN.txt` to the
+target repo `.gitignore` without overwriting existing ignore rules.
+
+That is it. Protected Paths is now active for this repo.
+
+## Test It
+
+### 1. Commit A Normal File
+
+Create or edit a normal file and commit it.
+
+Expected: commit succeeds.
+
+### 2. Try To Commit A Protected File
+
+By default, these paths are protected:
+
+`governance/`
+
+`hooks/`
+
+Edit a file inside one of those folders, stage it, then commit.
+
+Expected: the commit blocks and tells you the approval token is missing.
+
+### 3. Approve The Protected Change
+
+Run:
+
+`C:\Tools\AI_Protected_Paths\protected-paths.cmd authorize --reason "reviewed protected change"`
+
+Do not stage the approval token.
+Do not run `git add approvals/`.
+Stage only the actual files you intended to commit.
+
+### 4. Commit Again
+
+Run your commit again.
+
+Expected: the commit is allowed, the approval token is consumed, and a local
+proof receipt is created.
+
+### 5. View The Latest Proof Receipt
+
+Run:
+
+`C:\Tools\AI_Protected_Paths\protected-paths.cmd proofs latest`
+
+## What This Protects
+
+Use Protected Paths for files you do not want changed silently in normal commits:
+
+`governance/`
+
+`hooks/`
+
+deployment scripts
+
+production config
+
+AI rules
+
+repo policies
+
+critical workflows
+
+## What This Is
+
+Protected Paths is a local commit-time approval gate.
+
+It helps you catch and approve sensitive changes before they enter Git history.
+
+It is especially useful when using AI coding tools that may edit more than you
+intended.
+
+## What This Is Not
+
+Protected Paths is not cryptographic security.
+
+It is not branch protection.
+
+It is not remote enforcement.
+
+It is not tamper-proof.
+
+It can be bypassed with:
+
+`git commit --no-verify`
+
+That is intentional. This tool is a local governance checkpoint, not a security
+platform.
+
+## Quick FAQ
+
+### What problem does this solve?
+
+It prevents sensitive repo paths from changing silently during normal commits.
+
+### Why does this matter with AI coding tools?
+
+AI tools can edit files quickly. Protected Paths adds a deliberate pause before
+critical files are committed.
+
+### What happens when a protected file changes?
+
+The commit blocks until you create a local approval token.
+
+### Does it send my code anywhere?
+
+No. It is local.
+
+### What is a proof receipt?
+
+A local JSON record showing what the hook decided: allow or block, why, and
+which protected paths were involved.
+
+### Is this security?
+
+No. It is local governance and visibility, not security hardening.
+
+### Why pay for this instead of writing my own hook?
+
+Because this gives you a packaged, documented, tested commit-time approval flow
+with CLI commands, proof receipts, installer scripts, and bounded behavior out
+of the box.
+
+## Reference / Advanced Notes
+
+The notes below preserve the more technical first-run and recovery details.
+
+## Primary Windows Flow
+
+1. For a cleaner buyer repo, keep the package outside the target repo, `cd`
+   into the target repo, and call the package launcher by absolute path.
+   Putting the package inside the repo also works, but package/tooling files
+   will be visible in `git status` until ignored, removed, or intentionally
+   vendored.
+
+   Package inside repo:
+
+   `.\protected-paths.cmd install`
+
+   Package outside repo:
+
+   `C:\path\to\AI_Protected_Paths\protected-paths.cmd install`
+
+   The examples below use package-inside-repo path style. If your package is
+   outside the repo, replace `.\protected-paths.cmd` with your absolute launcher
+   path.
+
+2. Run a non-destructive state check:
+
+   `.\protected-paths.cmd verify`
+
+3. Optional diagnostics:
+
+   `.\protected-paths.cmd status`
+
+   `.\protected-paths.cmd doctor`
+
+4. Confirm protected paths:
+
+   `.\protected-paths.cmd protect list`
+
+   Defaults:
+
+   `governance/`
+
+   `hooks/`
+
+5. Add protected paths if needed:
+
+   `.\protected-paths.cmd protect add auth/`
+
+6. Commit an unprotected file. It should pass.
+
+7. Edit and stage a protected file, such as `governance/protected_paths.txt`.
+
+8. Commit without approval. It should block because the approval token is
+   missing.
+
+9. Create a local one-use approval token:
+
+   `.\protected-paths.cmd authorize --reason "reviewed protected path change"`
+
+10. Do not stage `approvals/APPROVAL_TOKEN.txt` and do not run
+    `git add approvals/`. Stage only the protected files intended for commit.
+    `APPROVAL_TOKEN_TEMPLATE.txt` is reference material, not the approval token.
+
+11. Commit the protected change again. It should pass, and the token should be
+    consumed.
+
+12. View the latest local proof receipt:
+
+    `.\protected-paths.cmd proofs latest`
+
+If no proof packet exists yet, that is normal before a governed commit decision
+has emitted one. Proof display does not perform schema validation.
+
+## Fallback Installers
+
+Use these from the target Git repo and invoke them by package path. The package
+launcher remains the recommended control surface.
+
+Windows:
+
+`powershell -ExecutionPolicy Bypass -File C:\path\to\AI_Protected_Paths\install.ps1`
+
+PowerShell launcher:
+
+`powershell -ExecutionPolicy Bypass -File C:\path\to\AI_Protected_Paths\protected-paths.ps1 install`
+
+macOS / Unix shell:
+
+`chmod +x /path/to/AI_Protected_Paths/install.sh && /path/to/AI_Protected_Paths/install.sh`
+
+Native Linux validation is pending until a real Linux host validation exists.
+
+## Recovery
+
+If the approval token is staged accidentally, run:
+
+`git reset approvals/APPROVAL_TOKEN.txt`
+
+Then commit again with only the intended protected files staged.
+
+If a protected commit blocks because the approval token is missing, run:
+
+`protected-paths authorize --reason "brief reason"`
+
+Do not stage the token or `approvals/`; then retry with only intended files
+staged.
+
+If `authorize` refuses to overwrite an existing token, finish or remove the
+pending token first.
+
+If a command says it is not inside a Git repo, move to the target repo directory.
+Repo-sensitive commands act on the current Git working directory.
+
+## Manual Uninstall
+
+There is no CLI `uninstall` command in this release.
+
+To disable the hook, remove:
+
+`.git/hooks/pre-commit`
+
+Optionally remove copied package files only if you are sure they are not
+user-owned. Local proof packets under `proofs/packets/` are user-owned local
+evidence; preserve or delete them by choice.
+
+## Boundaries
+
+AI Protected Paths is local pre-commit governance only. It is not cryptographic
+security, not branch protection, not remote/team-wide enforcement, not
+tamper-proof, and it can be bypassed with `git commit --no-verify`.

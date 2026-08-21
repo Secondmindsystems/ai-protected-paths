@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+set -eu
+
+if [ ! -f "hooks/pre_commit.sh" ]; then
+  echo "AI Protected Paths: missing hooks/pre_commit.sh" >&2
+  exit 1
+fi
+
+sh hooks/pre_commit.sh

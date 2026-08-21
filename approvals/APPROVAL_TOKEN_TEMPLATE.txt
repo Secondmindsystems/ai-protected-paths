@@ -1,0 +1,6 @@
+# LOCAL ONLY — DO NOT COMMIT
+# To approve a protected change, create:
+# approvals/APPROVAL_TOKEN.txt
+#
+# Suggested contents:
+# APPROVE 2026-02-13T00:00:00Z  reason="..."  by="..."

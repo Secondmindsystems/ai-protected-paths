@@ -1,0 +1,12 @@
+# AI Protected Paths - configure one protected path per line
+# Blank lines and lines starting with # are ignored.
+# Examples:
+# auth/
+# payments/
+# migrations/
+# infra/
+# .env
+#
+# Default self-protection:
+governance/
+hooks/
