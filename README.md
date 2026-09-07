@@ -1,84 +1,38 @@
 # AI Protected Paths
 
-## GitHub protects branches. Protected Paths governs files.
+## Require approval before selected files pass a local Git commit
 
-GitHub branch-protection controls operate at the branch and repository-hosting
-layer. AI Protected Paths adds a deterministic local pre-commit checkpoint for
-configured file paths on the normal Git commit route.
+AI coding tools can change a lot of files quickly. Some files—repository governance, hooks, deployment configuration, or anything else you choose—may deserve an extra checkpoint before they are committed.
 
-AI coding tools can modify many files quickly. Instructions can describe which
-files should or should not be changed, but instruction-following alone is not
-deterministic enforcement. Protected Paths makes selected repository paths
-machine-checkable at the normal local pre-commit boundary and requires explicit
-one-use approval where configured.
+AI Protected Paths adds that checkpoint to your normal local Git workflow.
 
-```text
-increased modification capability
--> sensitive paths need a distinct boundary
--> instructions alone are not deterministic enforcement
--> configured paths become machine-checkable
--> staged change reaches the normal pre-commit checkpoint
--> unauthorized protected change BLOCKS
--> valid approval permits that governed route
--> local decision evidence is recorded
-```
+You choose which path prefixes to protect. When a staged change touches one of them, the `pre-commit` hook blocks the commit until a valid one-use approval is present.
 
-## The distinction
+**[Start with the Windows quickstart](QUICKSTART.txt)** · [Inspect the validation results](docs/VALIDATION.md)
 
-Capability and authority are different questions. An AI tool may know how to
-change a sensitive file without having authorization to include that change in
-the current commit. Protected Paths makes one narrow authority boundary
-deterministic: whether configured paths may cross the normal local commit
-checkpoint.
+## How it works
 
-It is stronger than advisory instruction on that tested route. It is not a
-security boundary against an actor with unrestricted local control.
+Protected Paths reads the configured prefixes in `governance/protected_paths.txt` when a commit reaches the local pre-commit hook.
 
-## What Protected Paths does
+An ordinary staged path proceeds without a Protected Paths block.
 
-Protected Paths installs a local Git `pre-commit` hook and reads configured
-path prefixes from `governance/protected_paths.txt`.
+A protected path without approval is blocked.
 
-```text
-file outside configured protected set
--> Protected Paths itself does not block
+A protected path with a valid one-use approval can proceed through Protected Paths. After a successful governed commit, that approval is consumed.
 
-configured protected file + no valid one-use approval
--> BLOCK
+Each governed decision produces a local JSON receipt under `proofs/packets/`.
 
-configured protected file + valid one-use approval
--> ALLOW
--> approval consumed after successful governed use
+Other Git controls still make their own decisions. Passing Protected Paths does not guarantee that the commit itself will succeed.
 
-governed decision
--> local JSON receipt
-```
-
-Other Git controls can independently block any commit. An ALLOW result means
-only that Protected Paths did not block the governed route.
-
-The current package also fails closed when its protected-path configuration
-cannot be resolved, blocks staged approval tokens, and covers the tested
-rename/move-out, case-variant, and staged-config-tamper paths.
-
-## What the operator sees
-
-- An unprotected staged path proceeds without a Protected Paths block.
-- A configured protected path without approval produces a BLOCK message.
-- `authorize --reason` creates a local one-use approval token.
-- A successful governed commit consumes that token.
-- Hook decisions create local JSON receipts under `proofs/packets/`.
-
-Receipts are local operational evidence. They are not immutable or externally
-trusted audit records.
+The package also fails closed when its configuration cannot be resolved, blocks staged approval tokens, and covers tested rename/move-out, case-variant, and staged-configuration-tamper cases.
 
 ## Try it
 
-Download and verify the exact v1.0.1 ZIP in [`dist/`](dist/), or clone this
-repository and use the included launchers directly.
+Use the exact v1.0.1 ZIP included in [`dist/`](dist/), or clone the repository and use the included launchers directly.
 
-For the shortest Windows walkthrough, follow
-[`QUICKSTART.txt`](QUICKSTART.txt). The primary flow is:
+For the shortest Windows walkthrough, follow [`QUICKSTART.txt`](QUICKSTART.txt).
+
+The primary setup is:
 
 ```powershell
 cd C:\path\to\your-repository
@@ -86,20 +40,25 @@ C:\path\to\AI-Protected-Paths\protected-paths.cmd install
 C:\path\to\AI-Protected-Paths\protected-paths.cmd verify
 ```
 
-The shipped defaults protect:
+The default configuration protects:
 
 ```text
 governance/
 hooks/
 ```
 
-Test in a disposable repository. Stage an ordinary file, then a configured
-protected file without approval, then authorize and retry:
+Try it in a disposable repository.
+
+Stage an ordinary file and commit it. Then stage a configured protected file and try again without approval. Protected Paths should block the second commit.
+
+When you're ready to approve the protected change:
 
 ```powershell
 C:\path\to\AI-Protected-Paths\protected-paths.cmd authorize --reason "reviewed protected change"
 C:\path\to\AI-Protected-Paths\protected-paths.cmd proofs latest
 ```
+
+The approval is for one governed use. After a successful governed commit, it is consumed.
 
 Never stage `approvals/APPROVAL_TOKEN.txt`.
 
@@ -111,23 +70,17 @@ For the exact reconciled v1.0.1 artifact:
 - Bypass regression suite: **13/13 PASS**
 - Embedded payload manifest: **15/15 MATCH**
 - Runtime payload comparison: **12 expected files, PASS**
-- ZIP SHA-256:
-  `29A58EAB69D0922C90DE96558607CFB8C605EC7669E4C5BC9C1466F93FC34D58`
+- ZIP SHA-256: `29A58EAB69D0922C90DE96558607CFB8C605EC7669E4C5BC9C1466F93FC34D58`
 
-See [`docs/VALIDATION.md`](docs/VALIDATION.md) and the reproducible test
-scripts under [`tests/`](tests/).
+See [`docs/VALIDATION.md`](docs/VALIDATION.md) and the reproducible test scripts under [`tests/`](tests/).
 
-## What has not been tested or proven
+## Before you use it
 
-Protected Paths does not establish cryptographic security, tamper-proof
-enforcement, filesystem access control, remote enforcement, branch or pull
-request enforcement, CI/CD enforcement, server-side enforcement,
-organization-wide enforcement, malicious-intent detection, universal agent
-obedience, or production-enterprise qualification.
+Protected Paths is a **local Git commit checkpoint**.
 
-It can be bypassed with `git commit --no-verify`. An actor with sufficient
-local access can remove or modify local hooks. Each developer or automation
-environment must install the hook separately.
+Each developer or automation environment must install the hook separately. Someone with sufficient local access can remove or modify it or bypass it with `git commit --no-verify`.
+
+The receipts are local files and can also be changed by someone with access to them.
 
 Platform qualification for v1.0.1:
 
@@ -137,33 +90,38 @@ Platform qualification for v1.0.1:
 | macOS | **PENDING** |
 | Linux | **PENDING** |
 
-Historical native macOS evidence applies to v1.0.0 only and does not
-automatically qualify v1.0.1. See [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md).
+Historical native macOS testing applies to v1.0.0. See [operating limitations](docs/LIMITATIONS.md) for the release-specific details.
 
 ## Release identity
 
-The published in-tree binary is the byte-identical reconciled v1.0.1 ZIP:
+The v1.0.1 ZIP included in this repository is:
 
 [`dist/AI_Protected_Paths_v1.0.1_RECONCILED_29A58EAB_SHIP.zip`](dist/AI_Protected_Paths_v1.0.1_RECONCILED_29A58EAB_SHIP.zip)
 
-Verify it with the adjacent `.sha256` sidecar. Full identity details are in
-[`docs/RELEASE_IDENTITY.md`](docs/RELEASE_IDENTITY.md).
+Verify it with the adjacent `.sha256` file.
 
-## Where this fits
+Full artifact identity and reconciliation details are in [`docs/RELEASE_IDENTITY.md`](docs/RELEASE_IDENTITY.md).
 
-- **Behavior Profiles** make expected agent conduct explicit.
-- **Protected Paths** provides a deterministic local checkpoint for configured
-  repository paths.
-- **Governed Change** evaluates declared proposed changes against broader
-  acceptance conditions.
+## How this relates to the other work
 
-These are related architectural layers. They are not presented here as one
-deployed production runtime.
+[Behavior Profiles](https://github.com/Secondmindsystems/Behavior-Profiles) make expected agent conduct explicit in instructions.
+
+AI Protected Paths adds an executable checkpoint when selected repository paths need approval before a local commit proceeds.
+
+[Governed Change Demo](https://github.com/Secondmindsystems/governed-change-demo) shows a broader evaluation of a proposed change against declared paths, authority, and evidence.
+
+These are separate implementations that address different parts of the surrounding AI harness.
+
+For more of the engineering, visit the [Governed AI Systems Portfolio](https://github.com/Secondmindsystems/governed-ai-systems-portfolio).
+
+## About Second Mind Systems
+
+Built by Tavio Lawrence as part of Second Mind Systems' work on AI harnesses, agent systems, developer safeguards, evaluation, and reviewable execution.
+
+For engineering roles, consulting, implementation, or technical collaboration: [secondmindsystems@gmail.com](mailto:secondmindsystems@gmail.com).
 
 ## Rights
 
-AI Protected Paths is proprietary source-available software, not an
-OSI-approved open-source project. Personal and internal organizational use and
-modification are permitted; redistribution, resale, sublicensing, or offering
-it as a standalone third-party product or service requires prior written
-permission. See [`LICENSE.txt`](LICENSE.txt) for the controlling terms.
+AI Protected Paths is proprietary source-available software. Personal and internal organizational use and modification are permitted. Redistribution, resale, sublicensing, or offering it as a standalone third-party product or service requires prior written permission.
+
+See [`LICENSE.txt`](LICENSE.txt) for the controlling terms.
